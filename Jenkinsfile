@@ -1,16 +1,13 @@
 pipeline {
-    // 1. Ajan Seçimi: Bu pipeline'ın nerede çalışacağını belirtir.
-    // 'any', herhangi bir uygun Jenkins makinesinde çalışabilir demektir.
+    // Pipeline'ın herhangi bir uygun Jenkins makinesinde çalışacağını belirtir.
     agent any
 
-    // 2. Aşamalar (Stages): Pipeline'ın ana adımları.
     stages {
         // Aşama 1: Kodu İndirme
         stage('Checkout Code') {
             steps {
                 echo "GitHub'dan en güncel kod indiriliyor..."
-                // SCM (Source Control Management) üzerinden kodu çeker.
-                // Ayarları Jenkins arayüzünden yapacağız.
+                // Jenkins tarafından otomatik olarak konfigürasyondan alınan SCM ayarları ile kodu çeker.
                 checkout scm
             }
         }
@@ -18,15 +15,14 @@ pipeline {
         // Aşama 2: Ortamı Hazırlama ve Bağımlılıkları Kurma
         stage('Install Dependencies') {
             steps {
-                echo "Python kütüphaneleri requirements.txt'den kuruluyor..."
-                // 'sh' komutu, bir shell (terminal) komutu çalıştırır.
-                // Önce sanal ortam oluşturup sonra kütüphaneleri kurmak en iyi pratiktir.
-                sh '''
-                    python3 -m venv venv
-                    source venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                '''
+                echo "Python sanal ortamı oluşturuluyor..."
+                // Sanal ortamı oluştur.
+                sh 'python3 -m venv venv' 
+
+                echo "Kütüphaneler requirements.txt'den kuruluyor..."
+                // Sanal ortamdaki pip'i kullanarak kütüphaneleri kur.
+                sh './venv/bin/pip install --upgrade pip'
+                sh './venv/bin/pip install -r requirements.txt'
             }
         }
 
@@ -34,21 +30,18 @@ pipeline {
         stage('Run ML Training') {
             steps {
                 echo "Model eğitimi başlıyor (train.py çalıştırılıyor)..."
-                // Sanal ortamı aktif edip Python script'ini çalıştırırız.
-                sh '''
-                    source venv/bin/activate
-                    python train.py
-                '''
+                // Sanal ortamdaki python yorumlayıcısını kullanarak script'i çalıştır.
+                sh './venv/bin/python train.py' 
                 echo "Model eğitimi ve MLflow'a loglama tamamlandı."
             }
         }
     }
 
-    // 3. Post-build Actions: Pipeline bittikten sonra ne yapılacağı.
+    // Post-build Actions: Pipeline bittikten sonra ne yapılacağı.
     post {
         always {
             echo "Pipeline tamamlandı."
-            // Jenkins çalışma alanını temizle. Bu, diskte yer kaplamasını önler.
+            // Jenkins çalışma alanını temizle.
             cleanWs()
         }
     }
