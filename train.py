@@ -3,7 +3,6 @@ import mlflow.pyfunc
 from autogluon.tabular import TabularDataset, TabularPredictor
 import os
 
-
 mlflow.set_tracking_uri("file:./mlruns")
 mlflow.set_experiment("AutoGluon_Income_Prediction")
 
@@ -20,8 +19,10 @@ class AutoGluonWrapper(mlflow.pyfunc.PythonModel):
 
 with mlflow.start_run(run_name="AutoGluon_Run_1"):
 
-    train_data = TabularDataset('https://autogluon.s3.amazonaws.com/datasets/Inc/train.csv')
-    test_data = TabularDataset('https://autogluon.s3.amazonaws.com/datasets/Inc/test.csv')
+    # YENİ: Veriyi yerel 'data' klasöründen okuma
+    train_data = TabularDataset('data/train.csv')
+    test_data = TabularDataset('data/test.csv')
+    
     subsample_size = 500
     train_data = train_data.sample(n=subsample_size, random_state=0)
     label = 'class'

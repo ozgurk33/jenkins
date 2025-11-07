@@ -1,3 +1,5 @@
 mlflow
 autogluon.tabular
 pandas
+dvc
+dvc-gdrive

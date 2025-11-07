@@ -1,13 +1,12 @@
+# .gitignore
+
+# DVC'nin takip edeceği gerçek veriler
+/data/
+/mlruns/
+
 # Python cache
 __pycache__/
 *.pyc
-
-# Sanal ortam klasörü
-venv/
-env/
-
-# MLflow'un yerel loglama klasörü
-/mlruns/
-
-# AutoGluon Modelleri (çok büyük olabilirler)
-AutogluonModels/
+.virtualenv/
+.venv/
+/data
