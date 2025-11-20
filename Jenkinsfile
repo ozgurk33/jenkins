@@ -4,13 +4,16 @@ pipeline {
     environment {
         // MLflow verilerini workspace içine kaydeder
         MLFLOW_TRACKING_URI = "file://${WORKSPACE}/mlruns"
+        
+        // YENİ EKLENEN SATIR: Python'un "externally-managed" hatasını susturur
+        PIP_BREAK_SYSTEM_PACKAGES = '1'
     }
 
     stages {
         stage('Hazırlık') {
             steps {
                 echo 'Gerekli kütüphaneler kuruluyor...'
-                // Eğer Jenkins container'ında pip yoksa bu aşama hata verebilir (düzeltiriz)
+                // Artık hata vermeden kuracak
                 sh 'pip install -r requirements.txt' 
             }
         }
@@ -24,7 +27,6 @@ pipeline {
 
         stage('Sonuçları Sakla') {
             steps {
-                // mlruns klasörünü build sonrası sakla
                 archiveArtifacts artifacts: 'mlruns/**/*', allowEmptyArchive: true
             }
         }
