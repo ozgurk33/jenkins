@@ -1,0 +1,12 @@
+# Python gereksizleri
+__pycache__/
+*.py[cod]
+venv/
+
+# AutoGluon ve MLflow çıktıları
+mlruns/
+AutogluonModels/
+
+# Veri setleri
+data/
+*.csv
