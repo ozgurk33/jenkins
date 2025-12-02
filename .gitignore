@@ -1,12 +1,20 @@
-# Python gereksizleri
-__pycache__/
-*.py[cod]
-venv/
-
-# AutoGluon ve MLflow çıktıları
-mlruns/
+# AutoGluon ve MLflow'un oluşturduğu devasa klasörler
 AutogluonModels/
+mlruns/
+ag-*.pkl
+
+# Python gereksiz dosyaları
+__pycache__/
+*.pyc
 
 # Veri setleri
-data/
 *.csv
+
+# Garak raporları (her seferinde değişir)
+garak_*.txt
+garak_*.jsonl
+garak_*.html
+
+# Sanal ortam
+venv/
+.venv/
