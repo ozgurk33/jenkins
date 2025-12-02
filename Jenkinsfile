@@ -10,17 +10,28 @@ pipeline {
     stages {
         stage('Hazırlık (OWASP ML06)') {
             steps {
-                echo 'Gerekli kütüphaneler (Garak dahil) kuruluyor...'
-                // Garak'ı burada kuruyoruz ki python kodu onu import edebilsin
-                sh 'pip install safety garak autogluon mlflow pandas' 
+                echo 'Gerekli kütüphaneler (CPU versiyonlari) kuruluyor...'
+                
+                // 1. Önce pip'i güncelleyelim
+                sh 'pip install --upgrade pip'
+                
+                // 2. EN ÖNEMLİ ADIM: PyTorch'un CPU versiyonunu kuruyoruz.
+                // Bu sayede GB'larca NVIDIA driver indirmekten kurtuluyoruz.
+                sh 'pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu'
+                
+                // 3. Diğer ağır kütüphaneleri (AutoGluon, Garak) kuruyoruz.
+                // Timeout süresini uzatıyoruz ki yavaş internette takılmasın.
+                sh 'pip install autogluon garak mlflow pandas safety --default-timeout=1000'
+                
+                echo 'Güvenlik taraması başlıyor...'
                 sh 'safety check || true' 
             }
         }
 
         stage('Eğitim ve Güvenlik Testi (ML01 & ML02)') {
             steps {
-                echo 'Model eğitimi ve Garak taraması (train.py içinde) başlatılıyor...'
-                // Bu komut çalıştığında hem model eğitilecek hem de garak testi yapılacak
+                echo 'Model eğitimi ve Garak taraması başlatılıyor...'
+                // train.py içinde garak entegrasyonu olduğu için sadece bunu çalıştırmak yeterli
                 sh 'python train.py'
             }
         }
@@ -35,7 +46,6 @@ pipeline {
 
         stage('Raporlama') {
             steps {
-                // Hem MLflow dosyalarını hem de garak raporunu saklıyoruz
                 archiveArtifacts artifacts: 'mlruns/**/*, model_integrity.sig, garak_security_report.txt', allowEmptyArchive: true
             }
         }
