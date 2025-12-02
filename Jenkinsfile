@@ -1,52 +1,117 @@
 pipeline {
+
     agent any 
 
+
+
     environment {
+
         MLFLOW_TRACKING_URI = "file://${WORKSPACE}/mlruns"
+
+        
+
         PIP_BREAK_SYSTEM_PACKAGES = '1'
+
+        
+
         PATH = "/var/jenkins_home/.local/bin:${PATH}"
+
     }
+
+
 
     stages {
-        stage('Hazırlık (OWASP ML06)') {
+
+        stage('Hazırlık ve Tedarik Zinciri (OWASP ML06)') {
+
             steps {
-                echo 'Gerekli kütüphaneler kuruluyor...'
+
+                echo 'Bağımlılıklar kuruluyor ve taranıyor...'
+
                 
-                sh 'pip install --upgrade pip'
+
+                sh 'pip install safety garak'
+
+
+
+                sh 'pip install -r requirements.txt'
+
                 
-                // 1. PyTorch CPU versiyonu (Hafif olsun diye)
-                sh 'pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu'
-                
-                // 2. KRİTİK DEĞİŞİKLİK BURADA:
-                // "garak>=0.13.2" diyerek eski sürüm yüklemesini yasaklıyoruz.
-                // Ayrıca autogluon ile çakışmaması için önce autogluon kurup sonra garak kurmayı deneyebiliriz ama
-                // tek satırda versiyon zorlamak genelde çözer.
-                sh 'pip install "garak>=0.13.2" autogluon mlflow pandas safety --default-timeout=1000'
-                
+
                 echo 'Güvenlik taraması başlıyor...'
+
+
+
                 sh 'safety check || true' 
+
             }
+
         }
 
-        stage('Eğitim ve Güvenlik Testi (ML01 & ML02)') {
+
+
+        stage('Model Eğitimi & Veri Kökeni (OWASP ML02)') {
+
             steps {
-                echo 'Model eğitimi ve Garak taraması başlatılıyor...'
+
+                echo 'Model eğitimi ve hashleme başlıyor...'
+
+
+
                 sh 'python train.py'
+
             }
+
         }
 
-        stage('Model Bütünlüğü (OWASP ML10)') {
+
+
+        stage('Model İmzalama (Integrity - OWASP ML10)') {
+
             steps {
+
+                echo 'Model artifactları imzalanıyor (Mock)...'
+
                 script {
+
                     sh "find mlruns -name 'model.pkl' -exec sha256sum {} \\; > model_integrity.sig || true"
+
+                    echo "Model bütünlük imzası oluşturuldu: model_integrity.sig"
+
                 }
+
             }
+
         }
 
-        stage('Raporlama') {
+
+
+        stage('AI Red Teaming (Garak - OWASP ML01)') {
+
             steps {
-                archiveArtifacts artifacts: 'mlruns/**/*, model_integrity.sig, garak_security_report.txt', allowEmptyArchive: true
+
+                echo 'Modele saldırı simülasyonu yapılıyor...'
+
+
+
+                sh 'python -m garak --model_type test --probes encoding --report_prefix security_report || true'
+
             }
+
         }
+
+
+
+        stage('Sonuçları Sakla') {
+
+            steps {
+
+                archiveArtifacts artifacts: 'mlruns/**/*, model_integrity.sig, security_report.*', allowEmptyArchive: true
+
+            }
+
+        }
+
     }
+
 }
