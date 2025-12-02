@@ -10,18 +10,18 @@ pipeline {
     stages {
         stage('Hazırlık (OWASP ML06)') {
             steps {
-                echo 'Gerekli kütüphaneler (CPU versiyonlari) kuruluyor...'
+                echo 'Gerekli kütüphaneler kuruluyor...'
                 
-                // 1. Önce pip'i güncelleyelim
                 sh 'pip install --upgrade pip'
                 
-                // 2. EN ÖNEMLİ ADIM: PyTorch'un CPU versiyonunu kuruyoruz.
-                // Bu sayede GB'larca NVIDIA driver indirmekten kurtuluyoruz.
+                // 1. PyTorch CPU versiyonu (Hafif olsun diye)
                 sh 'pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu'
                 
-                // 3. Diğer ağır kütüphaneleri (AutoGluon, Garak) kuruyoruz.
-                // Timeout süresini uzatıyoruz ki yavaş internette takılmasın.
-                sh 'pip install autogluon garak mlflow pandas safety --default-timeout=1000'
+                // 2. KRİTİK DEĞİŞİKLİK BURADA:
+                // "garak>=0.13.2" diyerek eski sürüm yüklemesini yasaklıyoruz.
+                // Ayrıca autogluon ile çakışmaması için önce autogluon kurup sonra garak kurmayı deneyebiliriz ama
+                // tek satırda versiyon zorlamak genelde çözer.
+                sh 'pip install "garak>=0.13.2" autogluon mlflow pandas safety --default-timeout=1000'
                 
                 echo 'Güvenlik taraması başlıyor...'
                 sh 'safety check || true' 
@@ -31,7 +31,6 @@ pipeline {
         stage('Eğitim ve Güvenlik Testi (ML01 & ML02)') {
             steps {
                 echo 'Model eğitimi ve Garak taraması başlatılıyor...'
-                // train.py içinde garak entegrasyonu olduğu için sadece bunu çalıştırmak yeterli
                 sh 'python train.py'
             }
         }
